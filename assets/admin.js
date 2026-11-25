@@ -1012,7 +1012,9 @@
         var pin = String(byId("login-password").value || "").trim();
         if (!pin) throw new Error("Enter your admin PIN or password.");
         var result = await apiPost({ action: "login", password: pin });
-        if (!result.token || typeof result.token !== "string") throw new Error("The Apps Script did not return a valid session.");
+        if (typeof result.token !== "string" || !/^[a-f0-9]{64}$/i.test(result.token)) {
+          throw new Error("Apps Script returned success without a valid session token. Redeploy the current apps-script/Code.gs as a Web App and make sure admin.html uses that deployment URL.");
+        }
         byId("login-password").value = "";
         sessionStorage.setItem(SESSION_KEY, result.token);
         await beginSession(result.token);
