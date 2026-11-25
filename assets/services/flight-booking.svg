@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="300" y1="0" x2="300" y2="300" gradientUnits="userSpaceOnUse"><stop stop-color="#DDF1E6"/><stop offset="1" stop-color="#A7D6BE"/></linearGradient>
+    <linearGradient id="hill" x1="300" y1="132" x2="300" y2="300" gradientUnits="userSpaceOnUse"><stop stop-color="#52966E"/><stop offset="1" stop-color="#1D5940"/></linearGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h600v300H0z"/>
+  <circle cx="465" cy="72" r="31" fill="#F2D28C"/>
+  <path d="M0 202c99-45 155-52 252-23 89 27 139-22 211-17 58 4 89 32 137 15v123H0V202Z" fill="#9AC9A9"/>
+  <path d="M0 238c92-35 167-54 251-23 98 37 151-19 234-15 47 2 77 17 115 13v87H0v-62Z" fill="url(#hill)"/>
+  <path d="m248 104 83 11 84-37 18 5-66 53 73 25-8 9-91-12-47 34-13-3 22-38-70-34 2-13 12 3 2-3Z" fill="#fff" stroke="#347553" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M58 67c9-8 20-8 29 0m-12-15c12-10 27-10 39 0" stroke="#6B9E80" stroke-width="3" stroke-linecap="round"/>
+  <path d="M80 236h6m-3-7v14m414 14h6m-3-7v14" stroke="#F2D28C" stroke-width="3" stroke-linecap="round"/>
+</svg>
