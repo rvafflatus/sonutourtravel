@@ -115,14 +115,23 @@
   }
 
   async function parseApiResponse(response) {
+    if (!response.ok) {
+      throw new Error("Apps Script returned HTTP " + response.status + ". Check the Web App deployment and try again.");
+    }
     var payload;
     try {
       payload = await response.json();
     } catch (error) {
       throw new Error("Apps Script did not return JSON. Confirm the deployment is accessible and uses the admin API handler.");
     }
-    if (!payload || payload.ok !== true) {
-      var message = payload && payload.error ? payload.error : "The Apps Script request failed.";
+    if (Array.isArray(payload)) {
+      throw new Error("Apps Script returned an HSN list instead of the admin API response. Deploy the current apps-script/Code.gs file as a Web App.");
+    }
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Apps Script returned an unexpected response. Deploy the current apps-script/Code.gs file as a Web App.");
+    }
+    if (payload.ok !== true) {
+      var message = payload.error || "Apps Script rejected the request without an error message.";
       if (/session|unauthori[sz]ed|token/i.test(message)) {
         sessionStorage.removeItem(SESSION_KEY);
         state.token = "";
@@ -957,7 +966,9 @@
       var button = event.currentTarget.querySelector('button[type="submit"]');
       setButtonLoading(button, true);
       try {
-        var result = await apiPost({ action: "login", password: byId("login-password").value });
+        var pin = String(byId("login-password").value || "").trim();
+        if (!pin) throw new Error("Enter your admin PIN or password.");
+        var result = await apiPost({ action: "login", password: pin });
         if (!result.token || typeof result.token !== "string") throw new Error("The Apps Script did not return a valid session.");
         byId("login-password").value = "";
         sessionStorage.setItem(SESSION_KEY, result.token);
