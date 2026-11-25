@@ -28,7 +28,7 @@ button, input, select, textarea { font: inherit; }
 .site-header { position: sticky; z-index: 20; top: 0; background: rgba(255,255,255,.97); border-bottom: 1px solid #e8ecf1; box-shadow: 0 3px 14px rgba(11,25,44,.035); }
 .navbar { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 28px; }
 .brand { display: inline-flex; align-items: center; gap: 11px; flex-shrink: 0; }
-.brand img { object-fit: contain; border-radius: 50%; }
+.brand img { object-fit: contain; }
 .brand-copy { display: grid; gap: 3px; }
 .brand-copy strong { color: var(--navy); font-size: 16px; line-height: 1.1; letter-spacing: -.025em; }
 .brand-copy small { color: #8994a5; font-size: 8px; font-weight: 700; letter-spacing: .16em; }

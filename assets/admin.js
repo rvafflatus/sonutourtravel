@@ -114,15 +114,54 @@
     return error && error.message ? error.message : "The request could not be completed.";
   }
 
-  async function parseApiResponse(response) {
-    if (!response.ok) {
-      throw new Error("Apps Script returned HTTP " + response.status + ". Check the Web App deployment and try again.");
+  function isSuccessfulTextResponse(text) {
+    return /^(?:ok|success(?:fully)?|(?:saved|added|updated|deleted)(?: successfully)?|(?:invoice|service|hsn)\b.{0,120}\b(?:saved|added|updated|deleted)\b.*)[.!]?$/i.test(text);
+  }
+
+  function responseTextErrorMessage(text) {
+    var message = String(text || "").trim();
+    if (/^\s*<(?:!doctype|html|head|body)\b/i.test(message)) {
+      return "Apps Script returned an HTML page instead of an API response. Check that the Web App is deployed with public access.";
     }
-    var payload;
+    return message.slice(0, 240);
+  }
+
+  async function parseApiResponse(response, allowTextSuccess) {
+    var responseText;
     try {
-      payload = await response.json();
+      responseText = await response.text();
     } catch (error) {
-      throw new Error("Apps Script did not return JSON. Confirm the deployment is accessible and uses the admin API handler.");
+      throw new Error("Could not read the Apps Script response. Check the Web App deployment and try again.");
+    }
+
+    var text = String(responseText || "").trim();
+    var payload;
+    var isJson = false;
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+        isJson = true;
+      } catch (error) {
+        payload = null;
+      }
+    }
+
+    if (!response.ok) {
+      var detail = payload && typeof payload === "object" && (payload.error || payload.message);
+      detail = responseTextErrorMessage(detail || text);
+      throw new Error("Apps Script returned HTTP " + response.status + (detail ? ": " + detail : "."));
+    }
+    if (!text && allowTextSuccess && response.status === 204) return { ok: true };
+    if (!text) throw new Error("Apps Script returned an empty response.");
+
+    if (!isJson || typeof payload === "string") {
+      var textResponse = typeof payload === "string" ? payload.trim() : text;
+      if (allowTextSuccess && isSuccessfulTextResponse(textResponse)) {
+        return { ok: true, message: textResponse };
+      }
+      var textError = responseTextErrorMessage(textResponse) || "Apps Script returned an unexpected text response.";
+      if (!allowTextSuccess) textError += " Login must return JSON containing a session token.";
+      throw new Error(textError);
     }
     if (Array.isArray(payload)) {
       throw new Error("Apps Script returned an HSN list instead of the admin API response. Deploy the current apps-script/Code.gs file as a Web App.");
@@ -130,15 +169,18 @@
     if (!payload || typeof payload !== "object") {
       throw new Error("Apps Script returned an unexpected response. Deploy the current apps-script/Code.gs file as a Web App.");
     }
-    if (payload.ok !== true) {
-      var message = payload.error || "Apps Script rejected the request without an error message.";
-      if (/session|unauthori[sz]ed|token/i.test(message)) {
-        sessionStorage.removeItem(SESSION_KEY);
-        state.token = "";
-      }
-      throw new Error(message);
+    if (payload.ok === true || payload.success === true ||
+        String(payload.status || "").toLowerCase() === "success") {
+      return payload;
     }
-    return payload;
+
+    var message = payload.error || payload.message ||
+      "Apps Script reported a failure without details. Confirm the deployed Web App supports this action.";
+    if (/session|unauthori[sz]ed|token/i.test(message)) {
+      sessionStorage.removeItem(SESSION_KEY);
+      state.token = "";
+    }
+    throw new Error(message);
   }
 
   async function apiGet(action, token) {
@@ -161,10 +203,11 @@
       mode: "cors",
       credentials: "omit",
       cache: "no-store",
+      redirect: "follow",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
     });
-    return parseApiResponse(response);
+    return parseApiResponse(response, payload.action !== "login");
   }
 
   function showAdmin() {
